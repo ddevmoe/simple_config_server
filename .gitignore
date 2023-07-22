@@ -1,0 +1,14 @@
+# Python Virtual Environment
+venv/
+.venv/
+
+# IDE Related
+.vscode/
+.idea/
+
+# Local Development Files
+configs/
+
+# Compiled Binary / Byte-Code Python
+.py[cod]
+__pycache__/
