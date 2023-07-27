@@ -11,6 +11,8 @@ class ConfigParser:
         raw_shards = data.get('shards', [])
 
         content_by_env: dict[str, dict] = defaultdict(lambda: deepcopy(defaults))
+        content_by_env['default'] = defaults
+
         for shard in raw_shards:
             shard_envs = shard['envs']
             shard_content = shard['content']
