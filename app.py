@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, responses, Request, status
 
+from src import config
 from src.router import router
 from src.common import errors
 
@@ -45,6 +46,5 @@ async def root_redirect():
 
 
 
-
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8200)
+    uvicorn.run(app, host='0.0.0.0', port=config.HTTP_PORT)
