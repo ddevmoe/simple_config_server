@@ -34,8 +34,8 @@ def _merge(base: dict, extra: dict, path: list[str]) -> dict:
 
         if type(value) != type(base_value):
             raise UnequalTypeError(
-                type(base_value),
-                type(value),
+                type(base_value).__name__,
+                type(value).__name__,
                 key,
                 [*path, key],
             )
