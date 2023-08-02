@@ -94,7 +94,7 @@ class TestMerger(TestCase):
         d2 = {'key': 1}
 
         # Act + Assert
-        with self.assertRaises(merger.UnequalTypeError) as _error:
+        with self.assertRaises(merger.MergeUnequalTypesError) as _error:
             _ = merger.merge(d1, d2)
 
     def test_merger__different_type_of_values__same_nested_path__raises_error_with_correct_path(self):
@@ -108,7 +108,7 @@ class TestMerger(TestCase):
         # Act + Assert
         try:
             _ = merger.merge(d1, d2)
-        except merger.UnequalTypeError as error:
+        except merger.MergeUnequalTypesError as error:
             self.assertEqual(error.path, expected_path, 'Expected error to contain fauly path')
             self.assertEqual(error.base_type, expected_base_type)
             self.assertEqual(error.extra_type, expected_extra_type)

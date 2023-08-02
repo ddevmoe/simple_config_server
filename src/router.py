@@ -38,3 +38,10 @@ async def reload_config(name: str):
 @router.post('/refresh')
 async def refresh_config_store():
     await store.refresh()
+    return responses.JSONResponse(
+        {
+            'message': 'Reloaded all files successfully',
+            'status_code': status.HTTP_201_CREATED,
+        },
+        status_code=status.HTTP_201_CREATED,
+    )
