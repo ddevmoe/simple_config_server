@@ -17,7 +17,7 @@ class ConfigNotFoundError(SimpleConfigServerErrorBase):
 class EnvNotFoundError(SimpleConfigServerErrorBase):
     MESSAGE = 'Config env not found'
 
-    def __init__(self, name: str, env: str) -> None:
+    def __init__(self, name: str, env: str):
         super().__init__(self.MESSAGE)
         self.name = name
         self.env = env
