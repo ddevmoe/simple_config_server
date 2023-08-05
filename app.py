@@ -1,9 +1,9 @@
 import uvicorn
 from fastapi import FastAPI, responses, Request, status
 
-from src import config, merger, __VERSION__
+from src import merger, __VERSION__
 from src.router import router
-from src.common import errors
+from src.common import config, errors
 
 
 app = FastAPI(title='Simple Config Server', version=__VERSION__)

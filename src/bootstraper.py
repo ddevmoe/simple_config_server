@@ -1,4 +1,4 @@
-from src import config
+from src.common import config
 from src.loaders import LocalFolderLoader
 from src.parser import ConfigParser
 from src.store import ConfigStore
