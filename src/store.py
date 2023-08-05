@@ -27,7 +27,7 @@ class ConfigStore:
         config = await self._loader.load(name)
         self._configs[config.name] = config.envs
 
-    async def refresh(self):
+    async def reload_all(self):
         # Completely rewrites the store
         configs = await self._loader.load_all()
 
