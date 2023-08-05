@@ -23,7 +23,7 @@ async def get_config(name: str, env: str):
     return responses.JSONResponse(config)
 
 
-@router.post('/reload', description='Reload specific configuration by name')  # TODO: Add description
+@router.post('/reload', description='Reload specific configuration by name')
 async def reload_config(name: str):
     await store.reload(name)
     return responses.JSONResponse(
