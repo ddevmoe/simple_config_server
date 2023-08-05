@@ -1,3 +1,5 @@
+import time
+
 import uvicorn
 from fastapi import FastAPI, responses, Request, status
 
@@ -6,8 +8,10 @@ from src.router import router
 from src.common import config, errors
 
 
+START_TIME = time.time()
+
+
 app = FastAPI(title='Simple Config Server', version=__VERSION__)
-app.include_router(router)
 
 
 #region Custom Error Handling
@@ -61,6 +65,13 @@ async def handle_merger_unequal_type_error(_request: Request, error: merger.Merg
 async def root_redirect():
     return responses.RedirectResponse('/docs')
 
+
+@app.get('/healthcheck')
+async def healthcheck():
+    return responses.JSONResponse({'message': 'Up and running!', 'uptime_seconds': int(time.time() - START_TIME), 'status_code': status.HTTP_200_OK})
+
+
+app.include_router(router)
 
 
 if __name__ == '__main__':
