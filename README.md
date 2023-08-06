@@ -40,9 +40,13 @@ The `content` key contains the configuration value of the shard.
 
 The two mandatory keys of the top level object are - `default` and `shards`.
 
-`default` - contains the default configuration that will be present in __every__ environment of the configuration. The configuration presented under the default key is merged with the specified shards, depending on which environment is requested. In cases where a value is presented both in the default mapping and in a shard's mapping - the shard takes precedence and **overrides** the default (lists and nested objects are still merged).
+`default` - contains the default configuration that will be present in __every__ environment of the configuration. The configuration presented under the default key is merged with the specified shards, depending on which environment is requested.
 
 `shards` - a list of `shard` entities, where each one contains two keys
+
+In cases where a given path is presented both in the default mapping and in a shard's mapping, the shard takes precedence and **overrides** the default (lists and nested objects are merged).
+
+When a given configuration path exists in more than a single shard, the last shard in order of definition will take precedence and override previous values.
 
 A complete configuration example (shown as JSON):
 
@@ -141,10 +145,10 @@ Querying given configuration yields different result for each env:
 
 The project is intended to be selfhosted, using one of two options:
 
-## (WIP) 1. Docker
+## 1. Docker
 
 #### Run the a container with port 8080 exposed:
-`docker run -d -p 8080:8080 ddevmoe/simple_config_server:latest`
+`docker run -d -p 8080:8080 ghcr.io/ddevmoe/simple_config_server:latest`
 
 ## 2. Using Source
 
@@ -172,14 +176,14 @@ The project does not provide authentication and / or authorization mechanisms as
 Certificate management should be handled by the hosting entity, or applied using a reverse proxy / router.
 
 # Feature Roadmap
-- [ ] Cross configuration reference support
-- [ ] Dockerize the application
+- [x] Dockerize the application
+- [x] Enable feature configurability using env vars
+- [x] Healthcheck route
 - [ ] Support yaml & toml file formats
 - [ ] Support git & redis sources
-- [ ] Enable feature configurability using env vars
-- [ ] Logging
-- [ ] Tests & coverage
-- [ ] Healthcheck / Sanity routes (?)
+- [ ] Cross configuration reference support
+- [ ] Tests & Coverage
+- [ ] Enhanced logging
 
 # License
 
