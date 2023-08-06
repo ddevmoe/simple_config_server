@@ -1,21 +1,19 @@
 # Simple Config Server
 
-This projects aims at being a simple, straight forward and easy to self-host and maintain configuration server, while supporting common configuration practices and needs.
+This projects aims at being a simple, straightforward and easy to self-host configuration server, while supporting common configuration practices and requirements .
 
 # Features
 
 ### Multiple Source Options
-Configurations can be loaded from a variaety of sources:
+Configurations can be loaded from a variety of sources:
 * Local file system folder
-* Redis instance
-* Pulled from git
+* (WIP) Redis instance
+* (WIP) Pulled from git
 
 ### Environment Support
 Configurations support environments internally -
-Each file can any number of environments (prod / test / development / ...), where each environment is merged _on top_ of the "default" section.
+Each configuration can contain any number of environments (prod / test / development / ...), where each environment is merged _on top_ of the "default" section.
 
-### (WIP) Inter-config References
-Using a pre-defined syntax, one can refer values of one configuration file within another. This can come in handy when multiple files need to contain the same value (I.E. each service need to get the named of a shared SQL table).
 
 # Configuration Structure & Basic Usage Example
 
@@ -150,6 +148,9 @@ The project is intended to be selfhosted, using one of two options:
 #### Run the a container with port 8080 exposed:
 `docker run -d -p 8080:8080 ghcr.io/ddevmoe/simple_config_server:latest`
 
+##### Example - running with a volume mounted configuration files folder
+`docker run -d -p 8080:8080 -e 'SCS_LOCAL_CONFIG_FOLDER_PATH=/mnt/configs' -v '/path/to/configs:/mnt/configs' ghcr.io/ddevmoe/simple_config_server:latest`
+
 ## 2. Using Source
 
 #### Clone this repository
@@ -167,6 +168,17 @@ The project is intended to be selfhosted, using one of two options:
 #### Run the server
 
 `python app.py`
+
+
+# Configuration
+
+Configuring the server is done using environment variables. Variables relevant to the server will always be prefixed with `SCS` (**S**imple **C**onfig **S**erver).
+
+Every configuration option can be used regardless of hosting strategy (container / source code).
+
+`SCS_HTTP_PORT` - Port to be used by the web server (default - `8080`).
+
+`SCS_LOCAL_CONFIG_FOLDER_PATH` - Path to a directory where configuration files exist (default - `./configs`)
 
 
 # Security
