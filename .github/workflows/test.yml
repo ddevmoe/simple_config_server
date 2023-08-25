@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - '*cicd'
+  pull_request:
+    branches: ['master', '*cicd']
 
 jobs:
   test:
