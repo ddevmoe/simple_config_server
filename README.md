@@ -1,6 +1,6 @@
 # Simple Config Server
 
-This projects aims at being a simple, straightforward and easy to self-host configuration server, while supporting common configuration practices and requirements .
+This project aims to be a simple, straightforward and easy to self-host configuration server, while adhering to common configuration practices and requirements.
 
 # Features
 
@@ -40,11 +40,11 @@ The two mandatory keys of the top level object are - `default` and `shards`.
 
 `default` - contains the default configuration that will be present in __every__ environment of the configuration. The configuration presented under the default key is merged with the specified shards, depending on which environment is requested.
 
-`shards` - a list of `shard` entities, where each one contains two keys
+`shards` - a list of `shard` entities.
 
 In cases where a given path is presented both in the default mapping and in a shard's mapping, the shard takes precedence and **overrides** the default (lists and nested objects are merged).
 
-When a given configuration path exists in more than a single shard, the last shard in order of definition will take precedence and override previous values.
+When a given configuration path exists in more than a single shard, the last shard in order of definition will take precedence and override previous values (lists and nested objects are merged).
 
 A complete configuration example (shown as JSON):
 
@@ -172,7 +172,7 @@ The project is intended to be selfhosted, using one of two options:
 
 # Configuration
 
-Configuring the server is done using environment variables. Variables relevant to the server will always be prefixed with `SCS` (**S**imple **C**onfig **S**erver).
+Configuring the server is done using environment variables. Variables relevant to the server are prefixed with `SCS` (**S**imple **C**onfig **S**erver).
 
 Every configuration option can be used regardless of hosting strategy (container / source code).
 

@@ -9,7 +9,7 @@ class MergeError(SimpleConfigServerErrorBase):
 
 
 class MergeUnequalTypesError(MergeError):
-    MESSAGE = 'Failed merging given key since values\' types were unequal'
+    MESSAGE = 'Failed merging given key since values\' types are unequal'
 
     def __init__(
         self,
