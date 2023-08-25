@@ -27,7 +27,7 @@ class TestMerger(TestCase):
         actual = merger.merge(d1, d2, d3)
 
         # Assert
-        self.assertEqual(actual, 'nothing', 'Expected latest mapping to override previous ones')
+        self.assertEqual(actual, expected, 'Expected latest mapping to override previous ones')
 
     def test_merger__single_mapping__unchanged(self):
         # Arrange
