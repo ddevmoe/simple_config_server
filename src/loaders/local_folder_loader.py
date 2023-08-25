@@ -2,6 +2,7 @@ import glob
 import json
 from pathlib import Path
 
+from src.common.errors import ConfigNotFoundError
 from src.common.models import Config
 from src.parser import ConfigParser
 from .loader_base import LoaderBase
@@ -22,7 +23,9 @@ class LocalFolderLoader(LoaderBase):
 
     async def load(self, name: str) -> Config:
         file_path = glob.glob(f'{self._path}/{name}.json')
-        #TODO: Handle missing file here
+        if not file_path:
+            raise ConfigNotFoundError(name)
+
         config = self._load_from_path(file_path[0])
         return config
 
