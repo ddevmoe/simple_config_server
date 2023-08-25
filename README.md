@@ -1,5 +1,7 @@
 # Simple Config Server
 
+[![Test](https://github.com/ddevmoe/simple_config_server/actions/workflows/test.yml/badge.svg)](https://github.com/ddevmoe/simple_config_server/actions/workflows/test.yml)
+
 This project aims to be a simple, straightforward and easy to self-host configuration server, while adhering to common configuration practices and requirements.
 
 # Features
