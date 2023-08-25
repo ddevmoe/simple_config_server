@@ -1,0 +1,27 @@
+# Python Virtual Environment
+venv/
+.venv/
+
+# IDE Related
+.vscode/
+.idea/
+
+# Local Development Files
+.git
+.gitignore
+configs/
+
+# Docker Related Files
+.dockerignore
+Dockerfile
+
+# Compiled Binary / Byte-Code Python
+.py[cod]
+__pycache__/
+
+# Non Code-Related Files
+*.md
+LICENSE
+
+# Testing Files
+tests/

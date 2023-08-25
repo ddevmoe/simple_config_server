@@ -6,9 +6,6 @@ venv/
 .vscode/
 .idea/
 
-# Local Development Files
-configs/
-
 # Compiled Binary / Byte-Code Python
 .py[cod]
 __pycache__/
