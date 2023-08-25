@@ -3,6 +3,7 @@ name: Test
 run-name: ${{github.actor}} - ${{github.event_name}} - ${{github.ref_name}}
 
 on:
+  workflow_dispatch: null
   push:
     branches:
       - '*cicd'
