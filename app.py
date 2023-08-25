@@ -67,7 +67,7 @@ async def root_redirect():
 
 
 @app.get('/healthcheck')
-async def healthcheck():
+async def healthcheck() -> dict:
     return responses.JSONResponse({'message': 'Up and running!', 'uptime_seconds': int(time.time() - START_TIME), 'status_code': status.HTTP_200_OK})
 
 

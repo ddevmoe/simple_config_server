@@ -1,4 +1,6 @@
-from fastapi import APIRouter, responses, status
+from typing import Annotated
+
+from fastapi import APIRouter, responses, status, Path
 
 from src.bootstraper import bootstrap
 from src.store import ConfigStore
@@ -18,13 +20,18 @@ async def initialize():
 
 
 @router.get('/config/{name}/{env}')
-async def get_config(name: str, env: str):
+async def get_config(
+    name: str = Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
+    env: str = Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
+) -> dict:
     config = await store.get_config(name, env)
     return responses.JSONResponse(config)
 
 
-@router.post('/reload', description='Reload specific configuration by name')
-async def reload_config(name: str):
+@router.put('/reload/{name}', description='Reload specific configuration by name')
+async def reload_config(
+    name: Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
+) -> dict:
     await store.reload(name)
     return responses.JSONResponse(
         {
@@ -35,8 +42,8 @@ async def reload_config(name: str):
     )
 
 
-@router.post('/reload_all', description='Reload all configurations')
-async def reload_all_configs():
+@router.put('/reload_all', description='Reload all configurations')
+async def reload_all_configs() -> dict:
     await store.reload_all()
     return responses.JSONResponse(
         {
