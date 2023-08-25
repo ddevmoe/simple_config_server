@@ -1,0 +1,27 @@
+name: Test
+
+run-name: ${{github.actor}} - ${{github.event_name}} - ${{github.ref_name}}
+
+on:
+  push:
+    branches:
+      - '*cicd'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Tests
+        run: python -m unittest
