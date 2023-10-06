@@ -30,7 +30,7 @@ async def handle_config_not_found_error(_request: Request, error: errors.ConfigN
 
 
 @app.exception_handler(errors.EnvNotFoundError)
-async def handle_config_not_found_error(_request: Request, error: errors.EnvNotFoundError):
+async def handle_config_env_not_found_error(_request: Request, error: errors.EnvNotFoundError):
     return responses.JSONResponse(
         {
             'message': error.message,
