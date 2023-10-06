@@ -41,7 +41,7 @@ def _merge(base: dict, extra: dict, path: list[str]) -> dict:
 
         base_value = base[key]
 
-        if type(value) != type(base_value):
+        if type(value) != type(base_value):  # pylint: disable=unidiomatic-typecheck
             raise MergeUnequalTypesError(
                 type(base_value).__name__,
                 type(value).__name__,

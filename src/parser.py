@@ -2,7 +2,7 @@ from collections import defaultdict
 from copy import deepcopy
 
 from src import merger
-from src.common.models import EnvConfig, Config
+from src.common.models import Config, EnvConfig
 
 
 class ConfigParser:

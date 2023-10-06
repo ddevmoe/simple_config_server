@@ -8,7 +8,6 @@ from src.store import ConfigStore
 
 store: ConfigStore = None
 
-
 router = APIRouter()
 
 
@@ -21,8 +20,8 @@ async def initialize():
 
 @router.get('/config/{name}/{env}')
 async def get_config(
-    name: str = Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
-    env: str = Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
+    name: Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
+    env: Annotated[str, Path(..., pattern='^[a-zA-Z_-]+$')],
 ) -> dict:
     config = await store.get_config(name, env)
     return responses.JSONResponse(config)

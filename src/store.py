@@ -14,12 +14,12 @@ class ConfigStore:
         try:
             config = self._configs[name]
         except KeyError:
-            raise errors.ConfigNotFoundError(name)
+            raise errors.ConfigNotFoundError(name) from None
 
         try:
             env_config = config[env]
         except KeyError:
-            raise errors.EnvNotFoundError(name, env)
+            raise errors.EnvNotFoundError(name, env) from None
 
         return env_config.content
 
