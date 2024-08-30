@@ -1,3 +1,4 @@
+from copy import deepcopy
 from src.common.errors import SimpleConfigServerErrorBase
 
 
@@ -14,27 +15,28 @@ class MergeUnequalTypesError(MergeError):
     def __init__(
         self,
         base_type: str,
-        extra_type: str,
+        incoming_type: str,
         key: str,
         path: list[str],
     ):
         super().__init__(self.MESSAGE, key, path)
         self.base_type = base_type
-        self.extra_type = extra_type
+        self.incoming_type = incoming_type
 
     @property
     def pretty_path(self) -> str:
         return '.'.join(self.path)
 
     def __str__(self) -> str:
-        return f'{self.message} - {self.pretty_path} -> {self.base_type}(base) != {self.extra_type}(extra)'
+        return f'{self.message} - {self.pretty_path} -> {self.base_type} (current type) != {self.incoming_type} (incoming type)'
 
     def __repr__(self) -> str:
         return str(self)
 
 
-def _merge(base: dict, extra: dict, path: list[str]) -> dict:
-    for key, value in extra.items():
+def _merge(base: dict, incoming: dict, path: list[str]):
+    for key, value_reference in incoming.items():
+        value = deepcopy(value_reference)
         if key not in base:
             base[key] = value
             continue

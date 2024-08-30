@@ -17,7 +17,7 @@ app = FastAPI(title='Simple Config Server', version=__VERSION__)
 #region Custom Error Handling
 
 @app.exception_handler(errors.ConfigNotFoundError)
-async def handle_config_not_found_error(_request: Request, error: errors.ConfigNotFoundError):
+def handle_config_not_found_error(_request: Request, error: errors.ConfigNotFoundError):
     return responses.JSONResponse(
         {
             'name': error.name,
@@ -30,7 +30,7 @@ async def handle_config_not_found_error(_request: Request, error: errors.ConfigN
 
 
 @app.exception_handler(errors.EnvNotFoundError)
-async def handle_config_env_not_found_error(_request: Request, error: errors.EnvNotFoundError):
+def handle_config_env_not_found_error(_request: Request, error: errors.EnvNotFoundError):
     return responses.JSONResponse(
         {
             'message': error.message,
@@ -44,14 +44,14 @@ async def handle_config_env_not_found_error(_request: Request, error: errors.Env
 
 
 @app.exception_handler(merger.MergeUnequalTypesError)
-async def handle_merger_unequal_type_error(_request: Request, error: merger.MergeUnequalTypesError):
+def handle_merger_unequal_type_error(_request: Request, error: merger.MergeUnequalTypesError):
     return responses.JSONResponse(
         {
             'message': error.message,
             'detailed_message': str(error),
             'status_code': status.HTTP_422_UNPROCESSABLE_ENTITY,
             'base_type': error.base_type,
-            'extra_type': error.extra_type,
+            'incoming_type': error.incoming_type,
             'key': error.key,
             'path': error.pretty_path,
         },
@@ -62,12 +62,12 @@ async def handle_merger_unequal_type_error(_request: Request, error: merger.Merg
 
 
 @app.get('/', include_in_schema=False)
-async def root_redirect():
+def root_redirect():
     return responses.RedirectResponse('/docs')
 
 
 @app.get('/healthcheck')
-async def healthcheck() -> dict:
+def healthcheck() -> dict:
     return responses.JSONResponse({'message': 'Up and running!', 'uptime_seconds': int(time.time() - START_TIME), 'status_code': status.HTTP_200_OK})
 
 

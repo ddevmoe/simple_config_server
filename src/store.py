@@ -1,14 +1,16 @@
 from collections import defaultdict
 
 from src.common import errors
-from src.common.models import EnvConfig
-from src.loaders import LoaderBase
+from src.common.models import Config
+from src.parser import ConfigParser
+from src.readers import ReaderBase
 
 
 class ConfigStore:
-    def __init__(self, content_loader: LoaderBase):
-        self._loader = content_loader
-        self._configs: dict[str, dict[str, EnvConfig]] = {}
+    def __init__(self, reader: ReaderBase, parser: ConfigParser):
+        self._reader = reader
+        self._parser = parser
+        self._configs: dict[str, Config] = {}
 
     async def get_config(self, name: str, env: str) -> dict:
         try:
@@ -17,22 +19,24 @@ class ConfigStore:
             raise errors.ConfigNotFoundError(name) from None
 
         try:
-            env_config = config[env]
+            env_config = config.envs[env]
         except KeyError:
             raise errors.EnvNotFoundError(name, env) from None
 
         return env_config.content
 
     async def reload(self, name: str):
-        config = await self._loader.load(name)
-        self._configs[config.name] = config.envs
+        unparsed_config = await self._reader.read(name)
+        config = self._parser.parse_config(unparsed_config, self._configs.values())
+        self._configs[config.name] = config
 
     async def reload_all(self):
         # Completely rewrites the store
-        configs = await self._loader.load_all()
+        unparsed_configs = await self._reader.read_all()
+        parsed_configs = self._parser.parse_configs(unparsed_configs, [])
 
-        result: dict[str, dict[str, EnvConfig]] = defaultdict(dict)
-        for config in configs:
-            result[config.name] = config.envs
-
-        self._configs = dict(result)
+        configs = {
+            config.name: config
+            for config in parsed_configs
+        }
+        self._configs = configs

@@ -72,6 +72,9 @@ def build_config_reference(env: str, value: str) -> ConfigReference:
 def _get_nested_dictionary_value(dict_for_traversal: dict, path: list[str]) -> Any:
     value = dict_for_traversal
     for key in path:
+        # If path is not present in the provided dict return None (instead of a warning?)
+        if key not in value:
+            return None
         value = value[key]
     return value
 
@@ -80,7 +83,7 @@ def resolve_config_env_value(
     root_path: list[str],
     value: T,
     current_config: EnvConfig,
-    config_by_name: dict[str, Config]
+    config_by_name: dict[str, Config],
 ) -> T:
     if isinstance(value, dict):
         resolved_value = {}

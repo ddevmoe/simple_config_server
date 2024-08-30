@@ -1,10 +1,13 @@
 import os
+from typing import TypeVar
 
+
+T = TypeVar('T')
 
 _PREFIX = 'SCS'
 
 
-def resolve_config_value(name: str, default=None) -> str | None:
+def resolve_config_value(name: str, default: T = None) -> str | T:
     full_name = f'{_PREFIX}_{name}'
     value = os.environ.get(full_name, default)
     return value
