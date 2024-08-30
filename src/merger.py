@@ -1,4 +1,5 @@
 from copy import deepcopy
+
 from src.common.errors import SimpleConfigServerErrorBase
 
 
@@ -44,6 +45,9 @@ def _merge(base: dict, incoming: dict, path: list[str]):
         base_value = base[key]
 
         if type(value) != type(base_value):  # pylint: disable=unidiomatic-typecheck
+            # TODO: Should we allow overriding ConfigReferences by any value?
+            # At this point we still do not have the resolved value's
+            # type (if the resolution is even valid at all)
             raise MergeUnequalTypesError(
                 type(base_value).__name__,
                 type(value).__name__,

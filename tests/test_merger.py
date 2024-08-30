@@ -102,7 +102,7 @@ class TestMerger(TestCase):
         d1 = {'key': {'nested_key': 'value'}}
         d2 = {'key': {'nested_key': 1}}
         expected_base_type = 'str'
-        expected_extra_type = 'int'
+        expected_incoming_type = 'int'
         expected_path = ['key', 'nested_key']
 
         # Act + Assert
@@ -111,4 +111,4 @@ class TestMerger(TestCase):
         except merger.MergeUnequalTypesError as error:
             self.assertEqual(error.path, expected_path, 'Expected error to contain fauly path')
             self.assertEqual(error.base_type, expected_base_type)
-            self.assertEqual(error.extra_type, expected_extra_type)
+            self.assertEqual(error.incoming_type, expected_incoming_type)

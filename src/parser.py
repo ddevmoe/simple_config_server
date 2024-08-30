@@ -10,7 +10,7 @@ from src.common.models import Config, EnvConfig, UnparsedConfig
 class ConfigParser:
     def _generate_config(self, unparsed_config: UnparsedConfig) -> Config:
         """
-        Converts an `UnparsedConfig` instance to a `Config` instance
+        Convert `UnparsedConfig` instance to `Config`
         """
 
         defaults: dict = unparsed_config.content.get('default', {})
@@ -35,6 +35,11 @@ class ConfigParser:
         return parsed_config
 
     def parse_configs(self, unparsed_configs: list[UnparsedConfig], existing_configs: Iterable[Config]) -> list[Config]:
+        """
+        Converts an `UnparsedConfig` instance to a `Config` instance and resolves
+        references to other config files
+        """
+
         parsed_configs = [self._generate_config(config) for config in unparsed_configs]
 
         # Take out configs from `existing_configs` if they are being replaced by the newly provided configs
@@ -47,8 +52,8 @@ class ConfigParser:
 
     def parse_config(self, unparsed_config: UnparsedConfig, existing_configs: Iterable[Config]):
         """
-        Converts an `UnparsedConfig` instance to a `Config` instance and resolving
-        references to other config files, if provided via `` parameter
+        Converts an `UnparsedConfig` instance to a `Config` instance and resolves
+        references to other config files
         """
 
         parsed_configs = self.parse_configs([unparsed_config], existing_configs)
