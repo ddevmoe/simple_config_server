@@ -18,6 +18,21 @@ T = TypeVar('T')
 CONFIG_REFERENCE_PATTERN = '^\\${[0-9A-Za-z._-]+}$'
 
 
+#region Errors
+
+class _NonexistentKeyError(Exception):
+    """
+    Used internally by this module to accurately determine the location of a missing key reference
+    """
+
+    def __init__(self, missing_key_path: list[str]):
+        self.missing_key_path = missing_key_path
+
+    def __str__(self) -> str:
+        pretty_path = '.'.join(self.missing_key_path[:-1])
+        return f'{pretty_path} -x-> {self.missing_key_path[-1]}'
+
+
 class SelfReferencingConfigurationError(SimpleConfigServerErrorBase):
     MESSAGE = 'Configuration must not reference itself'
 
@@ -32,29 +47,56 @@ class SelfReferencingConfigurationError(SimpleConfigServerErrorBase):
         return f'Config "{self.config_name}" under env "{self.env}" is referencing itself at "{pretty_reference_location}"'
 
 
-class ReferencingNonExistentConfigurationError(SimpleConfigServerErrorBase):
+class ReferencingNonexistentConfigurationError(SimpleConfigServerErrorBase):
     MESSAGE = 'A configuration reference points to a nonexistent configuration'
 
-    def __init__(self, config_name: str, env: str, reference_location: list[str], referenced_config_name: str):
+    def __init__(self, referencing_config_name: str, env: str, referencing_key: list[str], referenced_config_name: str):
         super().__init__(self.MESSAGE)
-        self.config_name = config_name
+        self.config_name = referencing_config_name
         self.env = env
-        self.reference_location = reference_location
+        self.referencing_key = referencing_key
         self.referenced_config_name = referenced_config_name
 
     def __str__(self) -> str:
-        pretty_reference_location = '.'.join(self.reference_location)
-        return f'Config "{self.config_name}" under env "{self.env}" contains a reference at "{pretty_reference_location}" to config "{self.referenced_config_name}" but it does not exist'
+        pretty_referencing_key = '.'.join(self.referencing_key)
+        return f'Config "{self.config_name}" under env "{self.env}" contains a reference at "{pretty_referencing_key}" to config "{self.referenced_config_name}" but it does not exist'
+
+
+class ReferencingNonexistentKeyError(SimpleConfigServerErrorBase):
+    MESSAGE = 'A configuration reference points to a nonexistent key'
+
+    def __init__(
+        self,
+        referencing_config_name: str,
+        env: str,
+        referencing_key: list[str],
+        referenced_config_name: str,
+        missing_referenced_key_path: list[str],
+    ):
+        super().__init__(self.MESSAGE)
+        self.referencing_config_name = referencing_config_name
+        self.env = env
+        self.referencing_key = referencing_key
+        self.referenced_config_name = referenced_config_name
+        self.missing_referenced_key_path = missing_referenced_key_path
+
+    def __str__(self) -> str:
+        prettry_referencing_key = '.'.join(self.referencing_key)
+        prettry_referenced_key = '.'.join(self.missing_referenced_key_path[:-1]) + f' -x-> {self.missing_referenced_key_path[-1]}'
+        return f'Key {self.referencing_config_name}[{self.env}].{prettry_referencing_key} contains a broken reference: {prettry_referenced_key}'
+
+#endregion
 
 
 @dataclass
 class ConfigReference:
-    config_name: str
+    target_config_name: str
     env: str
-    reference_target: list[str]
+    target_reference_path: list[str]
 
 
 def is_value_a_reference(value: Any) -> bool:
+    # TODO: Deal with invalid references (i.e. "${configname.some...key}")?
     if not isinstance(value, str):
         return False
 
@@ -72,9 +114,9 @@ def build_config_reference(env: str, value: str) -> ConfigReference:
 def _get_nested_dictionary_value(dict_for_traversal: dict, path: list[str]) -> Any:
     value = dict_for_traversal
     for key in path:
-        # If path is not present in the provided dict return None (instead of a warning?)
-        if key not in value:
-            return None
+        if not isinstance(value, dict) or key not in value:
+            traversed_path = path[:path.index(key) + 1]
+            raise _NonexistentKeyError(traversed_path)
         value = value[key]
     return value
 
@@ -100,18 +142,28 @@ def resolve_config_env_value(
         return value
 
     reference = build_config_reference(current_config.env, value)
-    if reference.config_name == current_config.name:
+    if reference.target_config_name == current_config.name:
         raise SelfReferencingConfigurationError(current_config.name, current_config.env, root_path)
 
-    if reference.config_name not in config_by_name:
-        raise ReferencingNonExistentConfigurationError(current_config.name, current_config.env, root_path, reference.config_name)
+    if reference.target_config_name not in config_by_name:
+        raise ReferencingNonexistentConfigurationError(current_config.name, current_config.env, root_path, reference.target_config_name)
 
-    referenced_config = config_by_name[reference.config_name]
+    referenced_config = config_by_name[reference.target_config_name]
     if not current_config.env in referenced_config.envs:
         pass  # TODO: Display warning for taking value from env default?
 
     referenced_env = referenced_config.envs.get(current_config.env) or referenced_config.envs['default']
-    referenced_value = _get_nested_dictionary_value(referenced_env.content, reference.reference_target)
+
+    try:
+        referenced_value = _get_nested_dictionary_value(referenced_env.content, reference.target_reference_path)
+    except _NonexistentKeyError as error:
+        raise ReferencingNonexistentKeyError(
+            current_config.name,
+            current_config.env,
+            root_path,
+            reference.target_config_name,
+            error.missing_key_path,
+        )
 
     # The referenced value might be a dictionary that contains more references (or be a reference itself), we make sure
     # to fully resolve them too.
