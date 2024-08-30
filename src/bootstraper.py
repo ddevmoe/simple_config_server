@@ -1,12 +1,14 @@
 from src.common import config
-from src.loaders import LocalFolderLoader
+from src.deserializers import JsonDeserializer
+from src.readers import LocalFolderReader
 from src.parser import ConfigParser
 from src.store import ConfigStore
 
 
 def bootstrap() -> ConfigStore:
     parser = ConfigParser()
-    loader = LocalFolderLoader(parser, config.LOCAL_FOLDER_LOADER_PATH)
-    store = ConfigStore(loader)
+    desealizer = JsonDeserializer()
+    reader = LocalFolderReader(desealizer, config.LOCAL_FOLDER_LOADER_PATH)
+    store = ConfigStore(reader, parser)
 
     return store

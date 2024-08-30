@@ -2,6 +2,12 @@ from dataclasses import dataclass
 
 
 @dataclass
+class UnparsedConfig:
+    name: str
+    content: dict
+
+
+@dataclass
 class EnvConfig:
     name: str
     env: str
