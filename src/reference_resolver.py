@@ -15,7 +15,7 @@ from src.common.models import Config, EnvConfig
 
 T = TypeVar('T')
 
-CONFIG_REFERENCE_PATTERN = '^\\${[0-9A-Za-z._-]+}$'
+CONFIG_REFERENCE_PATTERN = '^\\$\\{(?:[0-9A-Za-z_-]+\\.)+[0-9A-Za-z_-]+\\}$'
 
 
 #region Errors
