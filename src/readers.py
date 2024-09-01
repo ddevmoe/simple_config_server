@@ -52,7 +52,7 @@ class LocalFolderReader(ReaderBase):
 
     async def read_all(self) -> list[UnparsedConfig]:
         configs: list[UnparsedConfig] = []
-        file_paths = glob.glob(f'{self._path}/**.json')
+        file_paths = glob.glob(f'{self._path}/**/*.json')
         for path in file_paths:
             config = self._load_from_path(path)
             configs.append(config)
