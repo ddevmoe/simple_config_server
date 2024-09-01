@@ -4,7 +4,8 @@ from unittest import TestCase
 from src import reference_resolver
 from src.common.models import Config, EnvConfig
 
-class TestReferenceResolver(TestCase):
+
+class TestReferenceResolution(TestCase):
     def test_resolve_references(self):
         # Arrange
         referenced_config = Config(
@@ -149,6 +150,86 @@ class TestReferenceResolver(TestCase):
         # Assert
         self.assertEqual(result, expected_result)
 
+    def test_resolve_references__nested_references__resolve_successfuly(self):
+        # Arrange
+        leaf = Config(
+            name='leaf',
+            envs={'default': EnvConfig('leaf', 'default', {'leaf_key': 'leaf_value'})},
+        )
+
+        middle = Config(
+            name='middle',
+            envs={'default': EnvConfig('middle', 'default', {'middle_key': '${leaf.leaf_key}'})},
+        )
+        expected_middle = Config(
+            name='middle',
+            envs={'default': EnvConfig('middle', 'default', {'middle_key': 'leaf_value'})},
+        )
+
+        top = Config(
+            name='top',
+            envs={'default': EnvConfig('top', 'default', {'top_key': '${middle.middle_key}'})},
+        )
+        expected_top = Config(
+            name='top',
+            envs={'default': EnvConfig('top', 'default', {'top_key': 'leaf_value'})},
+        )
+
+        expected_result = [leaf, expected_middle, expected_top]
+
+        # Act
+        result = reference_resolver.resolve_references([leaf, middle, top])
+
+        # Assert
+        self.assertEqual(result, expected_result)
+
+    def test_resolve_references__referenced_config_contains_other_references__references_resolve_successfuly(self):
+        # Arrange
+        leaf = Config(
+            name='leaf',
+            envs={'default': EnvConfig('leaf', 'default', {'leaf_key': 'leaf_value'})},
+        )
+
+        middle = Config(
+            name='middle',
+            envs={
+                'default': EnvConfig(
+                    name='middle',
+                    env='default',
+                    content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': '${leaf.leaf_key}'},
+                ),
+            },
+        )
+        expected_middle = Config(
+            name='middle',
+            envs={
+                'default': EnvConfig(
+                    name='middle',
+                    env='default',
+                    content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': 'leaf_value'},
+                ),
+            },
+        )
+
+        top = Config(
+            name='top',
+            envs={'default': EnvConfig('top', 'default', {'top_key': '${middle.middle_referenced_key}'})},
+        )
+        expected_top = Config(
+            name='top',
+            envs={'default': EnvConfig('top', 'default', {'top_key': 'middle_referenced_value'})},
+        )
+
+        expected_result = [leaf, expected_middle, expected_top]
+
+        # Act
+        result = reference_resolver.resolve_references([leaf, middle, top])
+
+        # Assert
+        self.assertEqual(result, expected_result)
+
+
+class TestReferenceResolutionErrorHandline(TestCase):
     def test_resolve_references__self_referencing_config__raises_error(self):
         # Arrange
         self_referencing_config = Config(
