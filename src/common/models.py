@@ -1,4 +1,32 @@
 from dataclasses import dataclass
+from typing import Iterable
+
+from pydantic import BaseModel
+
+
+@dataclass
+class Location:
+    BROKEN_PLACEHOLDER = '-x->'
+    FILE_REF_PLACEHOLDER = '->'
+
+    path: Iterable[str]
+
+    def __str__(self) -> str:
+        pretty_path = (
+            '.'.join(self.path)
+            .replace(f'.{self.BROKEN_PLACEHOLDER}.', f' {self.BROKEN_PLACEHOLDER} ')
+            .replace(f'.{self.FILE_REF_PLACEHOLDER}.', f' {self.FILE_REF_PLACEHOLDER} ')
+        )
+        return pretty_path
+
+
+class Problem(BaseModel):
+    message: str
+    location: Location
+
+    def __str__(self) -> str:
+        pretty_message = f'{{{self.location}}}: {self.message}'
+        return pretty_message
 
 
 @dataclass
@@ -7,14 +35,28 @@ class UnparsedConfig:
     content: dict
 
 
-@dataclass
-class EnvConfig:
+class EnvConfig(BaseModel):
     name: str
     env: str
     content: dict
+    problems: list[Problem]
+
+    @property
+    def has_problems(self) -> bool:
+        return bool(self.problems)
 
 
-@dataclass
-class Config:
+class Config(BaseModel):
+    """Holds all environments of a config"""
     name: str
+    default_env: EnvConfig
     envs: dict[str, EnvConfig]
+    problems: list[Problem]
+
+    @property
+    def has_problems(self) -> bool:
+        """True if either the config itself or it's default env have problems"""
+        return bool(self.problems)
+
+    def get_env(self, env: str) -> EnvConfig | None:
+        return self.envs.get(env)

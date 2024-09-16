@@ -1,7 +1,5 @@
-from collections import defaultdict
-
 from src.common import errors
-from src.common.models import Config
+from src.common.models import Config, EnvConfig
 from src.parser import ConfigParser
 from src.readers import ReaderBase
 
@@ -12,7 +10,10 @@ class ConfigStore:
         self._parser = parser
         self._configs: dict[str, Config] = {}
 
-    async def get_config(self, name: str, env: str) -> dict:
+    # TODO: Method is sync, remove async def
+    async def get_config(self, name: str) -> Config | None:
+        config = self._configs.get(name)
+        return config
         try:
             config = self._configs[name]
         except KeyError:
@@ -23,7 +24,10 @@ class ConfigStore:
         except KeyError:
             raise errors.EnvNotFoundError(name, env) from None
 
-        return env_config.content
+        return env_config
+
+    def get_available_configs(self) -> list[str]:
+        return list(self._configs)
 
     async def reload(self, name: str):
         unparsed_config = await self._reader.read(name)
