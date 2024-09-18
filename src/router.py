@@ -1,14 +1,75 @@
 from typing import Annotated
 
-from fastapi import APIRouter, responses, status, Path
+from fastapi import APIRouter, FastAPI, Request, responses, status, Path
 
+from src.common import errors
 from src.bootstraper import bootstrap
 from src.store import ConfigStore
 
 
-store: ConfigStore = None
-
+store: ConfigStore = None  # type: ignore
 router = APIRouter()
+
+
+#region Custom Error Handling
+
+
+def register_error_handlers(app: FastAPI):
+    @app.exception_handler(errors.ConfigNotFoundError)
+    def handle_config_not_found_error(_request: Request, error: errors.ConfigNotFoundError):
+        return responses.JSONResponse(
+            {
+                'name': error.name,
+                'message': error.message,
+                'detailed_message': str(error),
+                'status_code': status.HTTP_404_NOT_FOUND,
+            },
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    
+
+
+    @app.exception_handler(errors.EnvNotFoundError)
+    def handle_config_env_not_found_error(_request: Request, error: errors.EnvNotFoundError):
+        return responses.JSONResponse(
+            {
+                'message': error.message,
+                'detailed_message': str(error),
+                'status_code': status.HTTP_404_NOT_FOUND,
+                'name': error.name,
+                'env': error.env,
+            },
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+
+    @app.exception_handler(errors.ConfigProblemsError)
+    def handle_config_problems_error(_request: Request, error: errors.ConfigProblemsError):
+        return responses.JSONResponse(
+            {
+                'message': error.message,
+                'detailed_message': str(error),
+                'status_code': status.HTTP_422_UNPROCESSABLE_ENTITY,
+                'name': error.config.name,
+                'problems': [str(problem) for problem in error.config.problems],
+            },
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+    @app.exception_handler(errors.EnvConfigProblemsError)
+    def handle_env_config_problems_error(_request: Request, error: errors.EnvConfigProblemsError):
+        return responses.JSONResponse(
+            {
+                'message': error.message,
+                'detailed_message': str(error),
+                'status_code': status.HTTP_422_UNPROCESSABLE_ENTITY,
+                'name': error.env_config.name,
+                'env': error.env_config.env,
+                'problems': [str(problem) for problem in error.env_config.problems],
+            },
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+#endregion
 
 
 @router.on_event('startup')
