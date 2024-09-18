@@ -1,8 +1,54 @@
 from copy import deepcopy
 from unittest import TestCase
 
+
 from src import reference_resolver
 from src.common.models import Config, EnvConfig
+
+
+class TestReferenceDetection(TestCase):
+    def _assert_valid(self, reference: str, description: str):
+        self.assertTrue(
+            reference_resolver.is_value_a_reference(reference),
+            f'expected {description} to be valid',
+        )
+
+    def test_reference_detection__valid_values__true(self):
+        self._assert_valid('${filename}', 'filename only')
+        self._assert_valid('${filename.key1}', 'reference to a key')
+        self._assert_valid('${filename.key1.key2}', 'reference to a nested key')
+
+    def _assert_invalid(self, reference: str, description: str):
+        self.assertFalse(
+            reference_resolver.is_value_a_reference(reference),
+            f'expected {description} to be invalid',
+        )
+
+    def test_reference_detection__invalid_values__false(self):
+        # Trailing Dots
+        self._assert_invalid('${config_name.}', 'trailing single dot at end')
+        self._assert_invalid('${.config_name}', 'trailing single dot at start')
+        self._assert_invalid('${config_name.key1.}', 'trailing dot at end with key')
+        self._assert_invalid('${.config_name.key1}', 'trailing dot at start with key')
+        self._assert_invalid('${config_name.key1..}', 'trailing double dots at end')
+
+        # Multiple Dots
+        self._assert_invalid('${config_name..key1}', 'double dots after filename')
+        self._assert_invalid('${config_name.key1..key2}', 'double dots after key')
+
+        # Missing Characters
+        self._assert_invalid('$config_name', 'missing braces filename only')
+        self._assert_invalid('$config_name.key1', 'missing braces single key')
+        self._assert_invalid('$config_name.key1.key2', 'missing braces nested key')
+        self._assert_invalid('{config_name}', 'missing dollar filename only')
+        self._assert_invalid('{config_name.key1}', 'missing dollar single key')
+        self._assert_invalid('{config_name.key1.key2}', 'missing dollar nested key')
+        self._assert_invalid('$config_name}', 'missing left brace filename only')
+        self._assert_invalid('$config_name.key1}', 'missing left brace single key')
+        self._assert_invalid('$config_name.key1.key2}', 'missing left brace nested key')
+        self._assert_invalid('${config_name', 'missing right brace filename only')
+        self._assert_invalid('${config_name.key1', 'missing right brace single key')
+        self._assert_invalid('${config_name.key1.key2', 'missing right brace nested key')
 
 
 class TestReferenceResolution(TestCase):
