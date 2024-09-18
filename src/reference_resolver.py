@@ -158,7 +158,6 @@ def _resolve_config_env_value(
             location=Location([current_config.name, *root_path, Location.BROKEN_PLACEHOLDER, reference.target_config_name]),
         ))
         return f'{REFERENCE_RESOLUTION_ERROR_MESSAGE} ({value})'
-        # raise SelfReferencingConfigurationError(current_config.name, current_config.env, root_path)
 
     if reference.target_config_name not in config_by_name:
         current_config.problems.append(Problem(
@@ -166,7 +165,6 @@ def _resolve_config_env_value(
             location=Location([current_config.name, *root_path, Location.BROKEN_PLACEHOLDER, reference.target_config_name]),
         ))
         return f'{REFERENCE_RESOLUTION_ERROR_MESSAGE} ({value})'
-        # raise ReferencingNonexistentConfigurationError(current_config.name, current_config.env, root_path, reference.target_config_name)
 
     referenced_config = config_by_name[reference.target_config_name]
     if referenced_config.has_problems:
@@ -197,13 +195,6 @@ def _resolve_config_env_value(
             ]),
         ))
         return f'{REFERENCE_RESOLUTION_ERROR_MESSAGE} ({value})'
-        # raise ReferencingNonexistentKeyError(
-        #     current_config.name,
-        #     current_config.env,
-        #     root_path,
-        #     reference.target_config_name,
-        #     error.missing_key_path,
-        # )
 
     # The referenced value might be a dict that contains more references (or be a reference itself), we make sure
     # to fully resolve them too.
