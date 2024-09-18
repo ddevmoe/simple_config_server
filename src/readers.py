@@ -35,7 +35,7 @@ class LocalFolderReader(ReaderBase):
         self._deserializer = deserializer
 
     def _load_from_path(self, path: str) -> UnparsedConfig:
-        with open(path) as of:
+        with open(path, 'r', encoding='utf-8') as of:
             content = self._deserializer.deserialize(of.read())
 
         file_name = Path(path).stem
