@@ -1,15 +1,7 @@
-"""
-This reference resolution method uses recursion and nested traversal to resolve config references.
-
-Another solution that might be more efficient (yet more complicated to implement / maintain?) is to build a config reference
-graph and start the resolution from the leaves (configs that do not reference others), thus saving the "nested traversal" inefficiency.
-"""
-
 import re
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
-from src.common.errors import SimpleConfigServerErrorBase
 from src.common.models import Config, EnvConfig, Location, Problem
 
 
@@ -18,8 +10,6 @@ T = TypeVar('T')
 CONFIG_REFERENCE_PATTERN = '^\\$\\{(?:[0-9A-Za-z_-]+)(?:\\.[0-9A-Za-z_-]+)*\\}$'
 REFERENCE_RESOLUTION_ERROR_MESSAGE = 'UNRESOLVED_REFERENCE'
 
-
-#region Errors
 
 class _NonexistentKeyError(Exception):
     """
@@ -32,61 +22,6 @@ class _NonexistentKeyError(Exception):
     def __str__(self) -> str:
         pretty_path = '.'.join(self.missing_key_path[:-1])
         return f'{pretty_path} -x-> {self.missing_key_path[-1]}'
-
-
-class SelfReferencingConfigurationError(SimpleConfigServerErrorBase):
-    MESSAGE = 'Configuration must not reference itself'
-
-    def __init__(self, config_name: str, env: str, reference_location: list[str]):
-        super().__init__(self.MESSAGE)
-        self.config_name = config_name
-        self.env = env
-        self.reference_location = reference_location
-
-    def __str__(self) -> str:
-        pretty_reference_location = '.'.join(self.reference_location)
-        return f'Config "{self.config_name}" under env "{self.env}" is referencing itself at "{pretty_reference_location}"'
-
-
-class ReferencingNonexistentConfigurationError(SimpleConfigServerErrorBase):
-    MESSAGE = 'A configuration reference points to a nonexistent configuration'
-
-    def __init__(self, referencing_config_name: str, env: str, referencing_key: list[str], referenced_config_name: str):
-        super().__init__(self.MESSAGE)
-        self.config_name = referencing_config_name
-        self.env = env
-        self.referencing_key = referencing_key
-        self.referenced_config_name = referenced_config_name
-
-    def __str__(self) -> str:
-        pretty_referencing_key = '.'.join(self.referencing_key)
-        return f'Config "{self.config_name}" under env "{self.env}" contains a reference at "{pretty_referencing_key}" to config "{self.referenced_config_name}" but it does not exist'
-
-
-class ReferencingNonexistentKeyError(SimpleConfigServerErrorBase):
-    MESSAGE = 'A configuration reference points to a nonexistent key'
-
-    def __init__(
-        self,
-        referencing_config_name: str,
-        env: str,
-        referencing_key: list[str],
-        referenced_config_name: str,
-        missing_referenced_key_path: list[str],
-    ):
-        super().__init__(self.MESSAGE)
-        self.referencing_config_name = referencing_config_name
-        self.env = env
-        self.referencing_key = referencing_key
-        self.referenced_config_name = referenced_config_name
-        self.missing_referenced_key_path = missing_referenced_key_path
-
-    def __str__(self) -> str:
-        prettry_referencing_key = '.'.join(self.referencing_key)
-        prettry_referenced_key = '.'.join(self.missing_referenced_key_path[:-1]) + f' -x-> {self.missing_referenced_key_path[-1]}'
-        return f'Key {self.referencing_config_name}[{self.env}].{prettry_referencing_key} contains a broken reference: {prettry_referenced_key}'
-
-#endregion
 
 
 @dataclass
@@ -202,7 +137,7 @@ def _resolve_config_env_value(
     return resolved_referenced_value
 
 
-def _resolve_config(config: Config, config_by_name: dict[str, Config]) -> Config:
+def _resolve_config_references(config: Config, config_by_name: dict[str, Config]) -> Config:
     resolved_envs: dict[str, EnvConfig] = {}
     for env_config in config.envs.values():
         # Skip envs with problems to avoid clutter, as new problems are likely to emerge from existing problems
@@ -212,10 +147,14 @@ def _resolve_config(config: Config, config_by_name: dict[str, Config]) -> Config
 
         resolved_content: dict = _resolve_config_env_value([], env_config.content, env_config, config_by_name)
 
-        resolved_env = EnvConfig(name=env_config.name, env=env_config.env, content=resolved_content, problems=env_config.problems)
+        resolved_env = env_config.model_copy(update={'content': resolved_content})
         resolved_envs[env_config.env] = resolved_env
 
-    resolved_config = config.model_copy(update={'envs': resolved_envs})
+    # Resolve default env explicitly as it isn't in `config.envs.values()`
+    resolved_default_env_content: dict = _resolve_config_env_value([], config.default_env.content, config.default_env, config_by_name)
+    resolved_default_env = config.default_env.model_copy(update={'content': resolved_default_env_content})
+
+    resolved_config = config.model_copy(update={'default_env': resolved_default_env, 'envs': resolved_envs})
     return resolved_config
 
 
@@ -224,7 +163,7 @@ def resolve_references(configs: list[Config]) -> list[Config]:
 
     resolved_configs: list[Config] = []
     for config in configs:
-        resolved_config = _resolve_config(config, config_by_name)
+        resolved_config = _resolve_config_references(config, config_by_name)
         resolved_configs.append(resolved_config)
 
     return resolved_configs
