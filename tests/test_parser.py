@@ -15,10 +15,9 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-            },
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={},
         )
         parser = ConfigParser()
 
@@ -44,11 +43,9 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-                'env1': EnvConfig(config_name, 'env1', {'key1': 'value1'}),
-            },
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={'env1': EnvConfig(name=config_name, env='env1', content={'key1': 'value1'})},
         )
         parser = ConfigParser()
 
@@ -74,11 +71,11 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-                'env1': EnvConfig(config_name, 'env1', {'key1': 'value1'}),
-                'env2': EnvConfig(config_name, 'env2', {'key1': 'value1'}),
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={
+                'env1': EnvConfig(name=config_name, env='env1', content={'key1': 'value1'}),
+                'env2': EnvConfig(name=config_name, env='env2', content={'key1': 'value1'}),
             },
         )
         parser = ConfigParser()
@@ -106,11 +103,9 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-                'env1': EnvConfig(config_name, 'env1', {'key1': 'overridden'}),
-            },
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={'env1': EnvConfig(name=config_name, env='env1', content={'key1': 'overridden'})},
         )
         parser = ConfigParser()
 
@@ -136,11 +131,11 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-                'env1': EnvConfig(config_name, 'env1', {'key1': 'overridden'}),
-                'env2': EnvConfig(config_name, 'env2', {'key1': 'overridden'}),
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={
+                'env1': EnvConfig(name=config_name, env='env1', content={'key1': 'overridden'}),
+                'env2': EnvConfig(name=config_name, env='env2', content={'key1': 'overridden'}),
             },
         )
         parser = ConfigParser()
@@ -171,11 +166,9 @@ class TestParser(TestCase):
             },
         )
         expected = Config(
-            config_name,
-            {
-                'default': EnvConfig(config_name, 'default', {'key1': 'value1'}),
-                'env1': EnvConfig(config_name, 'env1', {'key1': 'overridden', 'key2': 'from_shard2'}),
-            },
+            name=config_name,
+            default_env=EnvConfig(name=config_name, env='default', content={'key1': 'value1'}),
+            envs={'env1': EnvConfig(name=config_name, env='env1', content={'key1': 'overridden', 'key2': 'from_shard2'})},
         )
         parser = ConfigParser()
 

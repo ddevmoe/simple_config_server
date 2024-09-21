@@ -3,7 +3,7 @@ from unittest import TestCase
 
 
 from src import reference_resolver
-from src.common.models import Config, EnvConfig
+from src.common.models import Config, EnvConfig, Location, Problem
 
 
 class TestReferenceDetection(TestCase):
@@ -52,20 +52,64 @@ class TestReferenceDetection(TestCase):
 
 
 class TestReferenceResolution(TestCase):
-    def test_resolve_references(self):
+    def test_resolve_references__references_in_default_env(self):
         # Arrange
         referenced_config = Config(
             name='referenced_config',
-            envs={'default': EnvConfig('referenced_config', 'default', {'referenced_key': 'referenced_value'})},
+            default_env=EnvConfig(name='referenced_config', env='default', content={'referenced_key': 'referenced_value'}),
+            envs={},
         )
 
         referencing_config = Config(
             name='referencing_config',
+            default_env=EnvConfig(
+                name='referencing_config',
+                env='default',
+                content={
+                    'key1': 'value1',
+                    'referencing_key': '${referenced_config.referenced_key}',
+                },
+            ),
+            envs={},
+        )
+
+        expected_resolved_config = Config(
+            name='referencing_config',
+            default_env=EnvConfig(
+                name='referencing_config',
+                env='default',
+                content={
+                    'key1': 'value1',
+                    'referencing_key': 'referenced_value',
+                },
+            ),
+            envs={},
+        )
+
+        expected_result = [referenced_config, expected_resolved_config]
+
+        # Act
+        result = reference_resolver.resolve_references([referenced_config, referencing_config])
+
+        # Assert
+        self.assertEqual(result, expected_result)
+
+    def test_resolve_references__references_in_specific_env(self):
+        # Arrange
+        referenced_config = Config(
+            name='referenced_config',
+            default_env=EnvConfig(name='referenced_config', env='default', content={'referenced_key': 'referenced_value'}),
+            envs={}, # TODO: Add env1 here to test references resolution on something that isn't the default env
+        )
+
+        referencing_config = Config(
+            name='referencing_config',
+            default_env=EnvConfig(name='referencing_config', env='default', content={'somekey': 'somevalue'}),
             envs={
-                'default': EnvConfig(
-                    'referencing_config',
-                    'default',
-                    {
+                'env1': EnvConfig(
+                    name='referencing_config',
+                    env='env1',
+                    content={
                         'key1': 'value1',
                         'referencing_key': '${referenced_config.referenced_key}',
                     },
@@ -75,11 +119,12 @@ class TestReferenceResolution(TestCase):
 
         expected_resolved_config = Config(
             name='referencing_config',
+            default_env=EnvConfig(name='referencing_config', env='default', content={'somekey': 'somevalue'}),
             envs={
-                'default': EnvConfig(
-                    'referencing_config',
-                    'default',
-                    {
+                'env1': EnvConfig(
+                    name='referencing_config',
+                    env='env1',
+                    content={
                         'key1': 'value1',
                         'referencing_key': 'referenced_value',
                     },
@@ -99,16 +144,18 @@ class TestReferenceResolution(TestCase):
         # Arrange
         referenced_config = Config(
             name='referenced_config',
-            envs={'default': EnvConfig('referenced_config', 'default', {'referenced_key': 'referenced_value'})},
+            default_env=EnvConfig(name='referenced_config', env='default', content={'some_key': 'some_value'}),
+            envs={'env1': EnvConfig(name='referenced_config', env='env1', content={'referenced_key': 'referenced_value'})},
         )
 
         referencing_config = Config(
             name='referencing_config',
+            default_env=EnvConfig(name='referencing_config', env='default', content={'other_key': 'other_value'}),
             envs={
-                'default': EnvConfig(
-                    'referencing_config',
-                    'default',
-                    {
+                'env1': EnvConfig(
+                    name='referencing_config',
+                    env='env1',
+                    content={
                         'key1': 'value1',
                         'referencing_key': '${referenced_config.referenced_key}',
                     },
@@ -132,11 +179,10 @@ class TestReferenceResolution(TestCase):
         # Arrange
         config = Config(
             name='config_name',
-            envs={'default': EnvConfig('config_name', 'default', {'key1': 'value1'})},
+            default_env=EnvConfig(name='config_name', env='default', content={'default_key1': 'default_value1'}),
+            envs={'env1': EnvConfig(name='config_name', env='env1', content={'key1': 'value1'})},
         )
-        original_config = deepcopy(config)
-
-        expected_result = [config]
+        expected_result = [deepcopy(config)]
 
         # Act
         result = reference_resolver.resolve_references([config])
@@ -153,17 +199,14 @@ class TestReferenceResolution(TestCase):
         # Arrange
         referenced_config = Config(
             name='referenced_config',
-            envs={'default': EnvConfig('referenced_config', 'default', {'referenced_key': 'referenced_value'})},
+            default_env=EnvConfig(name='referenced_config', env='default', content={'referenced_key': 'referenced_value'}),
+            envs={},
         )
 
         referencing_config = Config(
             name='referencing_config',
+            default_env=EnvConfig(name='referencing_config', env='default', content={}),
             envs={
-                'default': EnvConfig(
-                    name='referencing_config',
-                    env='default',
-                    content={},
-                ),
                 'env1': EnvConfig(
                     name='referencing_config',
                     env='env1',
@@ -174,12 +217,8 @@ class TestReferenceResolution(TestCase):
 
         expected_resolved_config = Config(
             name='referencing_config',
+            default_env=EnvConfig(name='referencing_config', env='default', content={}),
             envs={
-                'default': EnvConfig(
-                    name='referencing_config',
-                    env='default',
-                    content={},
-                ),
                 'env1': EnvConfig(
                     name='referencing_config',
                     env='env1',
@@ -200,25 +239,30 @@ class TestReferenceResolution(TestCase):
         # Arrange
         leaf = Config(
             name='leaf',
-            envs={'default': EnvConfig('leaf', 'default', {'leaf_key': 'leaf_value'})},
+            default_env=EnvConfig(name='leaf', env='default', content={'leaf_key': 'leaf_value'}),
+            envs={},
         )
 
         middle = Config(
             name='middle',
-            envs={'default': EnvConfig('middle', 'default', {'middle_key': '${leaf.leaf_key}'})},
+            default_env=EnvConfig(name='middle', env='default', content={'middle_key': '${leaf.leaf_key}'}),
+            envs={},
         )
         expected_middle = Config(
             name='middle',
-            envs={'default': EnvConfig('middle', 'default', {'middle_key': 'leaf_value'})},
+            default_env=EnvConfig(name='middle', env='default', content={'middle_key': 'leaf_value'}),
+            envs={},
         )
 
         top = Config(
             name='top',
-            envs={'default': EnvConfig('top', 'default', {'top_key': '${middle.middle_key}'})},
+            default_env=EnvConfig(name='top', env='default', content={'top_key': '${middle.middle_key}'}),
+            envs={},
         )
         expected_top = Config(
             name='top',
-            envs={'default': EnvConfig('top', 'default', {'top_key': 'leaf_value'})},
+            default_env=EnvConfig(name='top', env='default', content={'top_key': 'leaf_value'}),
+            envs={},
         )
 
         expected_result = [leaf, expected_middle, expected_top]
@@ -233,37 +277,38 @@ class TestReferenceResolution(TestCase):
         # Arrange
         leaf = Config(
             name='leaf',
-            envs={'default': EnvConfig('leaf', 'default', {'leaf_key': 'leaf_value'})},
+            default_env=EnvConfig(name='leaf', env='default', content={'leaf_key': 'leaf_value'}),
+            envs={},
         )
 
         middle = Config(
             name='middle',
-            envs={
-                'default': EnvConfig(
-                    name='middle',
-                    env='default',
-                    content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': '${leaf.leaf_key}'},
-                ),
-            },
+            default_env=EnvConfig(
+                name='middle',
+                env='default',
+                content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': '${leaf.leaf_key}'},
+            ),
+            envs={},
         )
         expected_middle = Config(
             name='middle',
-            envs={
-                'default': EnvConfig(
-                    name='middle',
-                    env='default',
-                    content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': 'leaf_value'},
-                ),
-            },
+            default_env=EnvConfig(
+                name='middle',
+                env='default',
+                content={'middle_referenced_key': 'middle_referenced_value', 'middle_referencing_key': 'leaf_value'},
+            ),
+            envs={},
         )
 
         top = Config(
             name='top',
-            envs={'default': EnvConfig('top', 'default', {'top_key': '${middle.middle_referenced_key}'})},
+            default_env=EnvConfig(name='top', env='default', content={'top_key': '${middle.middle_referenced_key}'}),
+            envs={},
         )
         expected_top = Config(
             name='top',
-            envs={'default': EnvConfig('top', 'default', {'top_key': 'middle_referenced_value'})},
+            default_env=EnvConfig(name='top', env='default', content={'top_key': 'middle_referenced_value'}),
+            envs={},
         )
 
         expected_result = [leaf, expected_middle, expected_top]
@@ -275,62 +320,115 @@ class TestReferenceResolution(TestCase):
         self.assertEqual(result, expected_result)
 
 
-class TestReferenceResolutionErrorHandline(TestCase):
-    def test_resolve_references__self_referencing_config__raises_error(self):
+class TestReferenceResolutionProblems(TestCase):
+    def _extract_problems(self, configs: list[Config]) -> list[Problem]:
+        """Extracts problems from a config and it's envs"""
+        problems: list[Problem] = []
+        for config in configs:
+            problems.extend(config.problems)
+            problems.extend(config.default_env.problems)
+            env_problems = [
+                problem
+                for env_config in config.envs.values()
+                for problem in env_config.problems
+            ]
+            problems.extend(env_problems)
+
+        return problems
+
+    def test_resolve_references__self_referencing_config__is_problem(self):
         # Arrange
         self_referencing_config = Config(
             name='self_referencing_config',
-            envs={'default': EnvConfig('self_referencing_config', 'default', {'referenced_key': '${self_referencing_config.referenced_key}'})},
+            default_env=EnvConfig(name='self_referencing_config', env='default', content={'referenced_key': '${self_referencing_config.referenced_key}'}),
+            envs={},
         )
+        expected_problems = [
+            Problem(
+                message='circular reference',
+                location=Location([
+                    'self_referencing_config',
+                    'referenced_key',
+                    Location.BROKEN_PLACEHOLDER,
+                    'self_referencing_config',
+                ]),
+            ),
+        ]
 
-        # Act + Assert
-        with self.assertRaises(reference_resolver.SelfReferencingConfigurationError, msg='Expected self referencing config to raise an error'):
-            _result = reference_resolver.resolve_references([self_referencing_config])
+        # Act
+        result = reference_resolver.resolve_references([self_referencing_config])
+        actual_problems = self._extract_problems(result)
 
-    def test_resolve_references__referencing_nonexistent_config__raises_error(self):
+        # Assert
+        self.assertEqual(actual_problems, expected_problems, 'Expected self referencing config to create a problem')
+
+    def test_resolve_references__referencing_nonexistent_config__is_problem(self):
         # Arrange
         referencing_config = Config(
             name='referencing_config',
-            envs={'default': EnvConfig('referencing_config', 'default', {'referenced_key': '${nonexistent.referenced_key}'})},
+            default_env=EnvConfig(name='referencing_config', env='default', content={'referenced_key': '${nonexistent.referenced_key}'}),
+            envs={},
         )
+        expected_problems = [
+            Problem(
+                message='referencing a nonexistent config',
+                location=Location([
+                    'referencing_config',
+                    'referenced_key',
+                    Location.BROKEN_PLACEHOLDER,
+                    'nonexistent',
+                ]),
+            ),
+        ]
 
-        # Act + Assert
-        with self.assertRaises(reference_resolver.ReferencingNonexistentConfigurationError, msg='Expected nonexistent config reference to raise an error'):
-            _result = reference_resolver.resolve_references([referencing_config])
+        # Act
+        result = reference_resolver.resolve_references([referencing_config])
+        actual_problems = self._extract_problems(result)
 
-    def test_resolve_references__referencing_nonexistent_key__raises_error(self):
+        # Assert
+        self.assertEqual(actual_problems, expected_problems, msg='Expected nonexistent config reference to raise an error')
+
+    def test_resolve_references__referencing_nonexistent_key__is_problem(self):
         # Arrange
         referenced_config = Config(
             name='referenced_config',
-            envs={
-                'default': EnvConfig(
-                    name='referenced_config',
-                    env='default',
-                    content={'logs': {'handlers': {'console': {'color': 'neon-pink'}}}},
-                ),
-            },
+            default_env=EnvConfig(
+                name='referenced_config',
+                env='default',
+                content={'logs': {'handlers': {'console': {'color': 'neon-pink'}}}},
+            ),
+            envs={},
         )
 
         referencing_config = Config(
             name='referencing_config',
-            envs={
-                'default': EnvConfig(
-                    name='referencing_config',
-                    env='default',
-                    content={'referencing_key': '${referenced_config.logs.handlers.console.nonexistent_key}'},
-                ),
-            },
+            default_env=EnvConfig(
+                name='referencing_config',
+                env='default',
+                content={'referencing_key': '${referenced_config.logs.handlers.console.nonexistent_key}'},
+            ),
+            envs={},
         )
+        expected_problems = [
+            Problem(
+                message='referencing a nonexistent key',
+                location=Location([
+                    'referencing_config',
+                    'referencing_key',
+                    Location.FILE_REF_PLACEHOLDER,
+                    'referenced_config[default]',
+                    'logs',
+                    'handlers',
+                    'console',
+                    Location.BROKEN_PLACEHOLDER,
+                    'nonexistent_key',
+                ]),
+            ),
+        ]
 
-        # Act + Assert
-        with self.assertRaises(
-            reference_resolver.ReferencingNonexistentKeyError,
-            msg='Expected referencing a nonexistent key to raise an error',
-        ) as mock:
-            _result = reference_resolver.resolve_references([referenced_config, referencing_config])
+        # Act
+        result = reference_resolver.resolve_references([referenced_config, referencing_config])
+        actual_problems = self._extract_problems(result)
 
-        self.assertEqual(mock.exception.referencing_config_name, referencing_config.name)
-        self.assertEqual(mock.exception.env, 'default')
-        self.assertEqual(mock.exception.referencing_key, ['referencing_key'])
-        self.assertEqual(mock.exception.referenced_config_name, referenced_config.name)
-        self.assertEqual(mock.exception.missing_referenced_key_path, ['logs', 'handlers', 'console', 'nonexistent_key'])
+        # Assert
+        self.assertEqual(actual_problems, expected_problems, msg='Expected referencing a nonexistent key to raise an error')
