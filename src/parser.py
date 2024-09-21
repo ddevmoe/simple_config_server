@@ -1,11 +1,10 @@
 from collections import defaultdict
 from copy import deepcopy
-from typing import Annotated, Iterable
+from typing import Iterable
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from src import merger, reference_resolver
-from src.common import config
 from src.common.models import (
     Config,
     Location,
@@ -16,10 +15,7 @@ from src.common.models import (
 
 
 class _ShardSchema(BaseModel):
-    envs: Annotated[
-        list[str],
-        Field(pattern=config.VALID_ENV_PATTERN),
-    ]
+    envs: list[str]
     content: dict
 
 
@@ -83,7 +79,10 @@ class ConfigParser:
     def parse_configs(self, unparsed_configs: list[UnparsedConfig], existing_configs: Iterable[Config]) -> list[Config]:
         """
         Converts an `UnparsedConfig` instance to a `Config` instance and resolves
-        references to other config files
+        references to other config files.
+
+        `existing_configs` are used when converting only a subset of all the configs
+            as they'll be used when resolving references.
         """
 
         parsed_configs = [self._generate_config(config) for config in unparsed_configs]
